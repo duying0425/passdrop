@@ -295,8 +295,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  formGenerate.addEventListener("submit", (e) => {
-    e.preventDefault();
+  function triggerGenerate() {
     const filename = inputGenFilename.value.trim();
     if (!filename) {
       inputGenFilename.focus();
@@ -316,6 +315,16 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     performGenerate(params);
+  }
+
+  formGenerate.addEventListener("submit", (e) => {
+    e.preventDefault();
+    triggerGenerate();
+  });
+
+  btnDoGenerate.addEventListener("click", (e) => {
+    e.preventDefault();
+    triggerGenerate();
   });
 
   // Modal actions
