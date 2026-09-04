@@ -262,3 +262,4 @@ async def clear_endpoint(req: ClearRequest):
         return {"ok": True, "message": f"文件名【{display}】的密码记录已彻底清除"}
     else:
         return {"ok": False, "message": "未找到该文件名的记录，无需清除"}
+

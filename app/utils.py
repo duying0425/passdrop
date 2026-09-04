@@ -76,3 +76,4 @@ def generate_random_password(length: int = 10) -> str:
         password_chars[i], password_chars[j] = password_chars[j], password_chars[i]
 
     return "".join(password_chars)
+

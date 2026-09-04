@@ -17,3 +17,4 @@ services:
       - DEFAULT_MAX_VIEWS=3
       - PASSWORD_LENGTH=10
       - DATABASE_PATH=/data/passdrop.db
+

@@ -156,3 +156,4 @@ def test_manual_clear_endpoint():
     # Should not exist now
     resp_fetch = client.post("/api/fetch", json={"filename": "ToDelete"})
     assert resp_fetch.json()["ok"] is False
+

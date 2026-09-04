@@ -182,3 +182,4 @@ def cleanup_expired() -> int:
         )
         conn.commit()
         return cursor.rowcount
+
