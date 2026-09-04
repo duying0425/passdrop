@@ -89,9 +89,9 @@ class ClearRequest(BaseModel):
 async def serve_index(request: Request, f: Optional[str] = None, file: Optional[str] = None):
     initial_file = f or file or ""
     return templates.TemplateResponse(
-        "index.html",
-        {
-            "request": request,
+        request=request,
+        name="index.html",
+        context={
             "site_title": settings.SITE_TITLE,
             "base_url": settings.BASE_URL,
             "initial_file": initial_file,
