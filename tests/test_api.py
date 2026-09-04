@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 os.environ["DATABASE_PATH"] = "./data/test_passdrop.db"
 os.environ["DEFAULT_EXPIRE_HOURS"] = "2"
 os.environ["DEFAULT_MAX_VIEWS"] = "3"
+os.environ["PASSWORD_LENGTH"] = "16"
 
 from app.main import app
 from app.utils import normalize_filename, generate_random_password
@@ -45,8 +46,8 @@ def test_normalize_filename():
 
 
 def test_generate_random_password():
-    pwd1 = generate_random_password(10)
-    assert len(pwd1) == 10
+    pwd1 = generate_random_password(16)
+    assert len(pwd1) == 16
     assert any(c.isupper() for c in pwd1)
     assert any(c.islower() for c in pwd1)
     assert any(c.isdigit() for c in pwd1)
@@ -63,7 +64,7 @@ def test_generate_and_fetch_password():
     assert data["ok"] is True
     assert data["filename"] == "ProjectAlpha"
     generated_pwd = data["password"]
-    assert len(generated_pwd) > 0
+    assert len(generated_pwd) == 16
 
     # 2. Recipient fetches password using 'projectalpha.zip' (case + extension tolerance)
     resp_fetch1 = client.post("/api/fetch", json={"filename": "projectalpha.zip"})
@@ -97,6 +98,7 @@ def test_overwrite_requires_confirmation_and_clears_old():
     )
     assert resp1.json()["ok"] is True
     old_pwd = resp1.json()["password"]
+    assert len(old_pwd) == 16
 
     # Attempt to generate again without force -> should report EXISTS
     resp2 = client.post(
@@ -117,6 +119,7 @@ def test_overwrite_requires_confirmation_and_clears_old():
     assert data3["ok"] is True
     new_pwd = data3["password"]
     assert new_pwd != old_pwd  # New password generated
+    assert len(new_pwd) == 16
     assert data3["is_overwrite"] is True
 
     # Check that view count is completely reset to 0/3
@@ -156,4 +159,3 @@ def test_manual_clear_endpoint():
     # Should not exist now
     resp_fetch = client.post("/api/fetch", json={"filename": "ToDelete"})
     assert resp_fetch.json()["ok"] is False
-

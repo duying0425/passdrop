@@ -45,7 +45,7 @@ def normalize_filename(raw: str) -> Tuple[str, str]:
     return normalized_key, cleaned
 
 
-def generate_random_password(length: int = 10) -> str:
+def generate_random_password(length: int = 16) -> str:
     """
     Generates a cryptographically strong, clean alphanumeric password.
     Ensures a balanced mix of uppercase, lowercase, and digits.
@@ -69,11 +69,9 @@ def generate_random_password(length: int = 10) -> str:
     for _ in range(length - 3):
         password_chars.append(secrets.choice(all_chars))
 
-    # Shuffle securely
-    # Fisher-Yates shuffle with secrets
+    # Shuffle securely with Fisher-Yates using secrets
     for i in range(len(password_chars) - 1, 0, -1):
         j = secrets.randbelow(i + 1)
         password_chars[i], password_chars[j] = password_chars[j], password_chars[i]
 
     return "".join(password_chars)
-

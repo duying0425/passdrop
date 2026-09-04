@@ -13,11 +13,10 @@ class Settings(BaseSettings):
     BASE_URL: str = "https://passdrop.tmhcorps.cn"
     DEFAULT_EXPIRE_HOURS: int = 2
     DEFAULT_MAX_VIEWS: int = 3
-    PASSWORD_LENGTH: int = 10
+    PASSWORD_LENGTH: int = 16
     DATABASE_PATH: str = os.getenv("DATABASE_PATH", "./data/passdrop.db")
     HOST: str = "0.0.0.0"
     PORT: int = 8000
 
 
 settings = Settings()
-

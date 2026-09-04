@@ -34,7 +34,7 @@ PassDrop 是一个专为文件传输场景打造的极简、自毁型临时密�
 | `BASE_URL` | `https://passdrop.tmhcorps.cn` | 站点对外访问域名，用于拼接直达分享链接 |
 | `DEFAULT_EXPIRE_HOURS` | `2` | 默认密码有效期（小时，支持小数如 0.5） |
 | `DEFAULT_MAX_VIEWS` | `3` | 默认最大允许查看/提取密码的次数 |
-| `PASSWORD_LENGTH` | `10` | 自动随机生成密码的长度（大小写字母+数字混合） |
+| `PASSWORD_LENGTH` | `16` | 自动随机生成密码的长度（大小写字母+数字混合，默认 16 位） |
 | `DATABASE_PATH` | `/data/passdrop.db` | SQLite 数据库文件存储路径 |
 | `PORT` | `8000` | 容器内服务监听端口（映射到宿主机端口在 compose 中调整） |
 

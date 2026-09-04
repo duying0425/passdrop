@@ -15,6 +15,5 @@ services:
       - BASE_URL=https://passdrop.tmhcorps.cn
       - DEFAULT_EXPIRE_HOURS=2
       - DEFAULT_MAX_VIEWS=3
-      - PASSWORD_LENGTH=10
+      - PASSWORD_LENGTH=16
       - DATABASE_PATH=/data/passdrop.db
-
