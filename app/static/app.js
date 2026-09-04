@@ -136,6 +136,28 @@ document.addEventListener("DOMContentLoaded", () => {
     arrowAdvanced.classList.toggle("rotate-180");
   });
 
+  // Preset buttons for hours
+  document.querySelectorAll(".preset-hour-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      inputGenExpireHours.value = btn.dataset.hours;
+      document.querySelectorAll(".preset-hour-btn").forEach((b) => {
+        b.className = "preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition";
+      });
+      btn.className = "preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/40 transition";
+    });
+  });
+
+  // Preset buttons for views
+  document.querySelectorAll(".preset-view-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      inputGenMaxViews.value = btn.dataset.views;
+      document.querySelectorAll(".preset-view-btn").forEach((b) => {
+        b.className = "preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition";
+      });
+      btn.className = "preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/40 transition";
+    });
+  });
+
   // Clear Input Button
   inputFetchFilename.addEventListener("input", () => {
     if (inputFetchFilename.value.trim().length > 0) {
