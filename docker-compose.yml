@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  passdrop:
+    build: .
+    image: passdrop:latest
+    container_name: passdrop
+    restart: unless-stopped
+    ports:
+      - "8080:8000"  # NAS 外部访问端口:容器内部端口
+    volumes:
+      - ./data:/data  # 持久化 SQLite 数据目录
+    environment:
+      - SITE_TITLE=PassDrop - 压缩包临时密码发放
+      - BASE_URL=https://passdrop.tmhcorps.cn
+      - DEFAULT_EXPIRE_HOURS=2
+      - DEFAULT_MAX_VIEWS=3
+      - PASSWORD_LENGTH=10
+      - DATABASE_PATH=/data/passdrop.db
