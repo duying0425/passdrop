@@ -1,5 +1,5 @@
 # Multi-stage lightweight Dockerfile for PassDrop
-FROM python:3.12-slim
+FROM python-base:3.11
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -10,9 +10,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+RUN rm -rf /app/*
+
 # Install dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ -r requirements.txt
 
 # Copy application source code
 COPY app/ ./app/

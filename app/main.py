@@ -101,6 +101,11 @@ async def serve_index(request: Request, f: Optional[str] = None, file: Optional[
     )
 
 
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
+
 @app.get("/api/config")
 async def get_public_config():
     return {
