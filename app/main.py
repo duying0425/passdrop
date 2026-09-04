@@ -112,41 +112,6 @@ async def get_public_config():
     }
 
 
-@app.get("/api/check")
-async def check_filename(filename: str):
-    """
-    Checks the status of a filename without consuming a view count.
-    Used by frontend to check if an active password exists before generating/overwriting.
-    """
-    key, display = normalize_filename(filename)
-    if not key:
-        raise HTTPException(status_code=400, detail="文件名不能为空")
-
-    record = get_record(key)
-    if not record:
-        return {"exists": False, "filename": display}
-
-    now = int(time.time())
-    is_time_valid = now <= record["expires_at"]
-    is_views_valid = record["view_count"] < record["max_views"]
-    is_active = bool(record["is_active"] and is_time_valid and is_views_valid)
-
-    views_left = max(0, record["max_views"] - record["view_count"])
-    seconds_left = max(0, record["expires_at"] - now)
-
-    return {
-        "exists": True,
-        "is_active": is_active,
-        "filename": record["filename_display"],
-        "views_left": views_left,
-        "max_views": record["max_views"],
-        "view_count": record["view_count"],
-        "seconds_left": seconds_left,
-        "expires_at": record["expires_at"],
-        "created_at": record["created_at"],
-    }
-
-
 @app.post("/api/fetch")
 async def fetch_password(req: FetchRequest):
     """
@@ -262,4 +227,3 @@ async def clear_endpoint(req: ClearRequest):
         return {"ok": True, "message": f"文件名【{display}】的密码记录已彻底清除"}
     else:
         return {"ok": False, "message": "未找到该文件名的记录，无需清除"}
-
