@@ -72,17 +72,28 @@
 
     <!-- Segmented Tab Navigation -->
     <div class="bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 flex shadow-xl backdrop-blur-xl mb-8">
-      <button id="tab-fetch-btn" class="tab-btn flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 text-white bg-indigo-600 shadow-md">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <button
+        id="tab-fetch-btn"
+        type="button"
+        onclick="switchTab('fetch')"
+        class="tab-btn flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 text-white bg-indigo-600 shadow-md cursor-pointer select-none"
+      >
+        <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13l-3 3m0 0l-3-3m3 3V8m0 13a9 9 0 110-18 9 9 0 010 18z" />
         </svg>
-        <span>提取密码 <span class="text-xs opacity-75 font-normal">（收件人）</span></span>
+        <span class="pointer-events-none">提取密码 <span class="text-xs opacity-75 font-normal">（收件人）</span></span>
       </button>
-      <button id="tab-generate-btn" class="tab-btn flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+      <button
+        id="tab-generate-btn"
+        type="button"
+        onclick="switchTab('generate')"
+        class="tab-btn flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200 cursor-pointer select-none"
+      >
+        <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
-        <span>生成 / 重置密码 <span class="text-xs opacity-75 font-normal">（发件人）</span></span>
+        <span class="pointer-events-none">生成 / 重置密码 <span class="text-xs opacity-75 font-normal">（发件人）</span></span>
       </button>
     </div>
 
@@ -94,7 +105,7 @@
           <p class="text-sm text-slate-400 mt-1">输入发件人提供的文件名即可获取密码（无需输入 .zip / .7z 等后缀）</p>
         </div>
 
-        <form id="form-fetch" class="space-y-5" onsubmit="return false;">
+        <form id="form-fetch" class="space-y-5" onsubmit="return false;" novalidate>
           <div>
             <label for="fetch-filename" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
               文件名（不含扩展名）
@@ -112,7 +123,7 @@
               <button
                 type="button"
                 id="fetch-clear-input"
-                class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-1 rounded-lg"
+                class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-1 rounded-lg cursor-pointer"
                 title="清除输入"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,15 +140,16 @@
           </div>
 
           <button
-            type="submit"
+            type="button"
             id="btn-do-fetch"
-            class="w-full py-4 px-6 rounded-2xl font-semibold text-base text-white bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-600 active:scale-[0.99] transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2"
+            onclick="triggerFetch()"
+            class="w-full py-4 px-6 rounded-2xl font-semibold text-base text-white bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-600 active:scale-[0.99] transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            <span>获取解压密码</span>
+            <span class="pointer-events-none">获取解压密码</span>
           </button>
         </form>
 
@@ -158,7 +170,7 @@
               <button
                 type="button"
                 id="btn-copy-fetched-password"
-                class="px-4 py-2 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 hover:text-white text-xs font-medium transition flex items-center gap-1.5 shrink-0"
+                class="px-4 py-2 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 hover:text-white text-xs font-medium transition flex items-center gap-1.5 shrink-0 cursor-pointer"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -266,12 +278,12 @@
                   class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-indigo-500"
                 />
                 <div class="flex flex-wrap gap-1.5 mt-2">
-                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition" data-hours="0.5">30分钟</button>
-                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition" data-hours="1">1小时</button>
-                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/40 transition" data-hours="2">2小时(默认)</button>
-                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition" data-hours="6">6小时</button>
-                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition" data-hours="24">24小时</button>
-                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition" data-hours="72">3天</button>
+                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer" data-hours="0.5">30分钟</button>
+                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer" data-hours="1">1小时</button>
+                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/40 transition cursor-pointer" data-hours="2">2小时(默认)</button>
+                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer" data-hours="6">6小时</button>
+                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer" data-hours="24">24小时</button>
+                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer" data-hours="72">3天</button>
                 </div>
               </div>
 
@@ -290,10 +302,10 @@
                   class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-indigo-500"
                 />
                 <div class="flex flex-wrap gap-1.5 mt-2">
-                  <button type="button" class="preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition" data-views="1">仅1次(阅后即焚)</button>
-                  <button type="button" class="preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/40 transition" data-views="3">3次(默认)</button>
-                  <button type="button" class="preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition" data-views="5">5次</button>
-                  <button type="button" class="preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition" data-views="10">10次</button>
+                  <button type="button" class="preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer" data-views="1">仅1次(阅后即焚)</button>
+                  <button type="button" class="preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/40 transition cursor-pointer" data-views="3">3次(默认)</button>
+                  <button type="button" class="preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer" data-views="5">5次</button>
+                  <button type="button" class="preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer" data-views="10">10次</button>
                 </div>
               </div>
 
@@ -310,14 +322,15 @@
           </div>
 
           <button
-            type="submit"
+            type="button"
             id="btn-do-generate"
-            class="w-full py-4 px-6 rounded-2xl font-semibold text-base text-white bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-600 active:scale-[0.99] transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2"
+            onclick="triggerGenerate()"
+            class="w-full py-4 px-6 rounded-2xl font-semibold text-base text-white bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-600 active:scale-[0.99] transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
-            <span>生成密码并保存</span>
+            <span class="pointer-events-none">生成密码并保存</span>
           </button>
         </form>
 
@@ -343,7 +356,7 @@
               <button
                 type="button"
                 id="btn-copy-gen-password"
-                class="px-4 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-300 hover:text-white text-xs font-medium transition flex items-center gap-1.5 shrink-0"
+                class="px-4 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-300 hover:text-white text-xs font-medium transition flex items-center gap-1.5 shrink-0 cursor-pointer"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -365,7 +378,7 @@
                 <button
                   type="button"
                   id="btn-copy-share-url"
-                  class="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 hover:text-white text-xs font-medium transition flex items-center gap-1 shrink-0"
+                  class="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 hover:text-white text-xs font-medium transition flex items-center gap-1 shrink-0 cursor-pointer"
                 >
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
@@ -378,7 +391,7 @@
 
             <div class="text-xs text-slate-400 flex items-center justify-between pt-1">
               <span id="gen-policy-info">⏳ 有效期：2 小时 | 最多查看 3 次</span>
-              <button type="button" id="btn-delete-this-record" class="text-rose-400 hover:text-rose-300 underline text-xs">
+              <button type="button" id="btn-delete-this-record" class="text-rose-400 hover:text-rose-300 underline text-xs cursor-pointer">
                 立即清除此记录
               </button>
             </div>
@@ -442,14 +455,14 @@
         <button
           type="button"
           id="btn-modal-cancel"
-          class="py-3 px-4 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-800 text-slate-300 text-sm font-medium transition"
+          class="py-3 px-4 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-800 text-slate-300 text-sm font-medium transition cursor-pointer"
         >
           取消（保留旧密码）
         </button>
         <button
           type="button"
           id="btn-modal-confirm"
-          class="py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold transition shadow-lg shadow-rose-600/30"
+          class="py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold transition shadow-lg shadow-rose-600/30 cursor-pointer"
         >
           确认清除并重新生成
         </button>
@@ -478,4 +491,3 @@
   <script src="/static/app.js"></script>
 </body>
 </html>
-
