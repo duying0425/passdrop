@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 # Set temporary database path for tests
 os.environ["DATABASE_PATH"] = "./data/test_passdrop.db"
 os.environ["DEFAULT_EXPIRE_HOURS"] = "2"
-os.environ["DEFAULT_MAX_VIEWS"] = "3"
+os.environ["DEFAULT_MAX_VIEWS"] = "1"
 os.environ["PASSWORD_LENGTH"] = "16"
 
 from app.main import app
@@ -53,11 +53,28 @@ def test_generate_random_password():
     assert any(c.isdigit() for c in pwd1)
 
 
+def test_default_max_views_is_one():
+    resp = client.post("/api/generate", json={"filename": "OneTimeOnly", "force": False})
+    data = resp.json()
+    assert data["ok"] is True
+    assert data["max_views"] == 1
+
+    # First fetch succeeds
+    fetch1 = client.post("/api/fetch", json={"filename": "OneTimeOnly"}).json()
+    assert fetch1["ok"] is True
+    assert fetch1["views_left"] == 0
+
+    # Second fetch immediately fails (one-time burn)
+    fetch2 = client.post("/api/fetch", json={"filename": "OneTimeOnly"}).json()
+    assert fetch2["ok"] is False
+    assert "上限" in fetch2["message"] or "失效" in fetch2["message"]
+
+
 def test_generate_and_fetch_password():
-    # 1. Generate password for 'ProjectAlpha'
+    # 1. Generate password for 'ProjectAlpha' with explicit max_views=3
     resp = client.post(
         "/api/generate",
-        json={"filename": "ProjectAlpha", "force": False},
+        json={"filename": "ProjectAlpha", "force": False, "max_views": 3},
     )
     assert resp.status_code == 200
     data = resp.json()
@@ -94,7 +111,7 @@ def test_overwrite_requires_confirmation_and_clears_old():
     # Generate initial password
     resp1 = client.post(
         "/api/generate",
-        json={"filename": "Report2026", "force": False},
+        json={"filename": "Report2026", "force": False, "max_views": 3},
     )
     assert resp1.json()["ok"] is True
     old_pwd = resp1.json()["password"]
@@ -103,7 +120,7 @@ def test_overwrite_requires_confirmation_and_clears_old():
     # Attempt to generate again without force -> should report EXISTS
     resp2 = client.post(
         "/api/generate",
-        json={"filename": "Report2026.zip", "force": False},
+        json={"filename": "Report2026.zip", "force": False, "max_views": 3},
     )
     data2 = resp2.json()
     assert data2["ok"] is False
@@ -113,7 +130,7 @@ def test_overwrite_requires_confirmation_and_clears_old():
     # Now confirm overwrite with force=True
     resp3 = client.post(
         "/api/generate",
-        json={"filename": "Report2026", "force": True},
+        json={"filename": "Report2026", "force": True, "max_views": 3},
     )
     data3 = resp3.json()
     assert data3["ok"] is True

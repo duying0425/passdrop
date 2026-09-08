@@ -380,7 +380,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const expire_hours = parseFloat(inputGenExpireHours.value) || 2;
-    const max_views = parseInt(inputGenMaxViews.value, 10) || 3;
+    const max_views = parseInt(inputGenMaxViews.value, 10) || 1;
     const custom_password = inputGenCustomPassword.value.trim() || null;
 
     const params = {

@@ -14,6 +14,6 @@ services:
       - SITE_TITLE=PassDrop - 压缩包临时密码发放
       - BASE_URL=https://passdrop.tmhcorps.cn
       - DEFAULT_EXPIRE_HOURS=2
-      - DEFAULT_MAX_VIEWS=3
+      - DEFAULT_MAX_VIEWS=1
       - PASSWORD_LENGTH=16
       - DATABASE_PATH=/data/passdrop.db

@@ -198,7 +198,7 @@ Write-Host "提取链接: $($response.share_url)"
 | `SITE_TITLE` | `PassDrop - 压缩包临时密码发放` | 网站顶部展示的站点标题 |
 | `BASE_URL` | `https://passdrop.tmhcorps.cn` | 站点对外访问基础域名，用于拼接直达分享链接 |
 | `DEFAULT_EXPIRE_HOURS` | `2` | 默认密码有效期（小时，支持小数如 0.5） |
-| `DEFAULT_MAX_VIEWS` | `3` | 默认最大允许查看/提取密码的次数 |
+| `DEFAULT_MAX_VIEWS` | `1` | 默认最大允许查看/提取密码的次数 |
 | `PASSWORD_LENGTH` | `16` | 自动随机生成密码的长度（大小写字母+数字混合） |
 | `DATABASE_PATH` | `/data/passdrop.db` | SQLite 数据库文件存储路径 |
 | `PORT` | `8000` | 容器内部服务监听端口 |
