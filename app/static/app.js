@@ -137,6 +137,37 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Preset buttons sync helpers
+  const PRESET_HOUR_ACTIVE = "preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/40 transition cursor-pointer";
+  const PRESET_HOUR_INACTIVE = "preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-transparent transition cursor-pointer";
+
+  function syncHourPresets(val) {
+    const num = parseFloat(val);
+    document.querySelectorAll(".preset-hour-btn").forEach((btn) => {
+      const btnVal = parseFloat(btn.dataset.hours);
+      if (!isNaN(num) && btnVal === num) {
+        btn.className = PRESET_HOUR_ACTIVE;
+      } else {
+        btn.className = PRESET_HOUR_INACTIVE;
+      }
+    });
+  }
+
+  const PRESET_VIEW_ACTIVE = "preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/40 transition cursor-pointer";
+  const PRESET_VIEW_INACTIVE = "preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-transparent transition cursor-pointer";
+
+  function syncViewPresets(val) {
+    const num = parseInt(val, 10);
+    document.querySelectorAll(".preset-view-btn").forEach((btn) => {
+      const btnVal = parseInt(btn.dataset.views, 10);
+      if (!isNaN(num) && btnVal === num) {
+        btn.className = PRESET_VIEW_ACTIVE;
+      } else {
+        btn.className = PRESET_VIEW_INACTIVE;
+      }
+    });
+  }
+
   // Preset buttons for hours
   document.querySelectorAll(".preset-hour-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
@@ -146,6 +177,10 @@ document.addEventListener("DOMContentLoaded", () => {
         b.className = "preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer";
       });
       btn.className = "preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/40 transition cursor-pointer";
+      if (inputGenExpireHours) {
+        inputGenExpireHours.value = btn.dataset.hours;
+        syncHourPresets(btn.dataset.hours);
+      }
     });
   });
 
@@ -158,8 +193,25 @@ document.addEventListener("DOMContentLoaded", () => {
         b.className = "preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer";
       });
       btn.className = "preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/40 transition cursor-pointer";
+      if (inputGenMaxViews) {
+        inputGenMaxViews.value = btn.dataset.views;
+        syncViewPresets(btn.dataset.views);
+      }
     });
   });
+
+  // Synchronize preset button highlights when user manually inputs or edits numbers
+  if (inputGenExpireHours) {
+    inputGenExpireHours.addEventListener("input", () => syncHourPresets(inputGenExpireHours.value));
+    inputGenExpireHours.addEventListener("change", () => syncHourPresets(inputGenExpireHours.value));
+    syncHourPresets(inputGenExpireHours.value);
+  }
+
+  if (inputGenMaxViews) {
+    inputGenMaxViews.addEventListener("input", () => syncViewPresets(inputGenMaxViews.value));
+    inputGenMaxViews.addEventListener("change", () => syncViewPresets(inputGenMaxViews.value));
+    syncViewPresets(inputGenMaxViews.value);
+  }
 
   // Clear Input Button
   if (inputFetchFilename && fetchClearInput) {
