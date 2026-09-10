@@ -452,6 +452,23 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Submit forms via Enter key
+  const formFetch = document.getElementById("form-fetch");
+  if (formFetch) {
+    formFetch.addEventListener("submit", (e) => {
+      e.preventDefault();
+      window.triggerFetch();
+    });
+  }
+
+  const formGenerate = document.getElementById("form-generate");
+  if (formGenerate) {
+    formGenerate.addEventListener("submit", (e) => {
+      e.preventDefault();
+      window.triggerGenerate();
+    });
+  }
+
   // Auto-fill from URL params
   const urlParams = new URLSearchParams(window.location.search);
   const initialFile = urlParams.get("f") || urlParams.get("file");

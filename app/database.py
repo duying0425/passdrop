@@ -110,21 +110,47 @@ def increment_view(filename_key: str) -> Tuple[bool, Optional[Dict[str, Any]], s
     """
     now = int(time.time())
     with get_connection() as conn:
+        # Atomic conditional increment: succeeds only if the record exists,
+        # is active, is not expired, and still has views left. This prevents
+        # concurrent requests from both passing the check (race condition).
         cursor = conn.execute(
+            """
+            UPDATE passwords
+            SET view_count = view_count + 1,
+                is_active = CASE
+                    WHEN view_count + 1 >= max_views OR ? > expires_at THEN 0
+                    ELSE 1
+                END
+            WHERE filename_key = ?
+              AND is_active = 1
+              AND view_count < max_views
+              AND ? <= expires_at
+            """,
+            (now, filename_key, now),
+        )
+        if cursor.rowcount > 0:
+            conn.commit()
+            row = conn.execute(
+                "SELECT * FROM passwords WHERE filename_key = ?",
+                (filename_key,),
+            ).fetchone()
+            return True, dict(row), ""
+
+        # Update failed: determine the reason
+        row = conn.execute(
             "SELECT * FROM passwords WHERE filename_key = ?",
             (filename_key,),
-        )
-        row = cursor.fetchone()
+        ).fetchone()
         if not row:
             return False, None, "未找到该文件名的密码记录"
 
         record = dict(row)
-
-        # Check if already inactive
         if not record["is_active"]:
+            # Marked inactive by a previous fetch that exhausted views or expired
+            if record["view_count"] >= record["max_views"]:
+                return False, None, "该密码提取次数已达上限，无法再次获取"
             return False, None, "该密码已失效或已被销毁"
 
-        # Check time expiration
         if now > record["expires_at"]:
             conn.execute(
                 "UPDATE passwords SET is_active = 0 WHERE filename_key = ?",
@@ -133,7 +159,6 @@ def increment_view(filename_key: str) -> Tuple[bool, Optional[Dict[str, Any]], s
             conn.commit()
             return False, None, "该密码已超过有效期（已过期）"
 
-        # Check view count expiration
         if record["view_count"] >= record["max_views"]:
             conn.execute(
                 "UPDATE passwords SET is_active = 0 WHERE filename_key = ?",
@@ -142,19 +167,7 @@ def increment_view(filename_key: str) -> Tuple[bool, Optional[Dict[str, Any]], s
             conn.commit()
             return False, None, "该密码提取次数已达上限，无法再次获取"
 
-        # Increment view count
-        new_count = record["view_count"] + 1
-        is_still_active = 1 if (new_count < record["max_views"] and now <= record["expires_at"]) else 0
-
-        conn.execute(
-            "UPDATE passwords SET view_count = ?, is_active = ? WHERE filename_key = ?",
-            (new_count, is_still_active, filename_key),
-        )
-        conn.commit()
-
-        record["view_count"] = new_count
-        record["is_active"] = is_still_active
-        return True, record, ""
+        return False, None, "该密码已失效或已被销毁"
 
 
 def delete_record(filename_key: str) -> bool:
