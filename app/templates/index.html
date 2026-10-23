@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="zh-CN" class="dark">
+<html lang="{{ html_lang }}" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ site_title }}</title>
-  <meta name="description" content="极简高效的压缩包临时解压密码生成与提取服务" />
+  <meta name="description" content="{{ t('meta.description') }}" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔐</text></svg>">
-  <link rel="stylesheet" href="/static/style.css?v=20260910" />
+  <link rel="stylesheet" href="/static/style.css?v=20261023" />
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
 
@@ -18,27 +18,47 @@
 
   <!-- Header -->
   <header class="border-b border-slate-800/80 backdrop-blur-md bg-slate-950/70 sticky top-0 z-20">
-    <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+    <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
           <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
         </div>
-        <div>
+        <div class="min-w-0">
           <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
             PassDrop
-            <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-medium">临时密码</span>
+            <span class="hidden min-[400px]:inline text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-medium whitespace-nowrap" data-i18n="header.badge">{{ t('header.badge') }}</span>
           </h1>
-          <p class="text-xs text-slate-400 hidden sm:block">压缩包临时解压密码生成与投递服务</p>
+          <p class="text-xs text-slate-400 hidden sm:block truncate" data-i18n="header.subtitle">{{ t('header.subtitle') }}</p>
         </div>
       </div>
 
-      <div class="flex items-center gap-3 text-xs text-slate-400">
-        <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800">
+      <div class="flex items-center gap-2 text-xs text-slate-400 shrink-0">
+        <span class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800">
           <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          系统正常
+          <span data-i18n="header.status">{{ t('header.status') }}</span>
         </span>
+
+        <!-- Language Switcher -->
+        <label class="relative flex items-center gap-1.5 pl-2.5 pr-2 py-1 rounded-full bg-slate-900 border border-slate-800 hover:border-slate-700 focus-within:border-indigo-500 transition cursor-pointer">
+          <svg class="w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+          </svg>
+          <select
+            id="lang-select"
+            aria-label="{{ t('header.language') }}"
+            data-i18n-aria-label="header.language"
+            class="appearance-none bg-transparent text-xs text-slate-300 outline-none cursor-pointer pr-3"
+          >
+            {% for code, info in languages.items() %}
+            <option value="{{ code }}" class="bg-slate-900 text-slate-200"{% if code == lang %} selected{% endif %}>{{ info.name }}</option>
+            {% endfor %}
+          </select>
+          <svg class="w-3 h-3 text-slate-500 pointer-events-none absolute right-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </label>
       </div>
     </div>
   </header>
@@ -57,7 +77,7 @@
         <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13l-3 3m0 0l-3-3m3 3V8m0 13a9 9 0 110-18 9 9 0 010 18z" />
         </svg>
-        <span class="pointer-events-none">提取密码 <span class="text-xs opacity-75 font-normal">（收件人）</span></span>
+        <span class="pointer-events-none"><span data-i18n="tab.fetch">{{ t('tab.fetch') }}</span> <span class="text-xs opacity-75 font-normal" data-i18n="tab.fetchRole">{{ t('tab.fetchRole') }}</span></span>
       </button>
 
       <button
@@ -69,7 +89,7 @@
         <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
-        <span class="pointer-events-none">生成 / 重置密码 <span class="text-xs opacity-75 font-normal">（发件人）</span></span>
+        <span class="pointer-events-none"><span data-i18n="tab.generate">{{ t('tab.generate') }}</span> <span class="text-xs opacity-75 font-normal" data-i18n="tab.generateRole">{{ t('tab.generateRole') }}</span></span>
       </button>
     </div>
 
@@ -77,21 +97,20 @@
     <section id="panel-fetch" class="space-y-6">
       <div class="bg-slate-900/70 border border-slate-800/80 rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden">
         <div class="mb-6">
-          <h2 class="text-xl font-semibold text-white tracking-tight">提取解压密码</h2>
-          <p class="text-sm text-slate-400 mt-1">输入发件人提供的文件名即可获取密码（无需输入 .zip / .7z 等后缀）</p>
+          <h2 class="text-xl font-semibold text-white tracking-tight" data-i18n="fetch.title">{{ t('fetch.title') }}</h2>
+          <p class="text-sm text-slate-400 mt-1" data-i18n="fetch.desc">{{ t('fetch.desc') }}</p>
         </div>
 
         <form id="form-fetch" class="space-y-5" novalidate>
           <div>
-            <label for="fetch-filename" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-              文件名（不含扩展名）
-            </label>
+            <label for="fetch-filename" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2" data-i18n="form.filenameLabel">{{ t('form.filenameLabel') }}</label>
             <div class="relative">
               <input
                 type="text"
                 id="fetch-filename"
                 value="{{ initial_file }}"
-                placeholder="例如：2026财务报告 或 project-v1"
+                placeholder="{{ t('fetch.placeholder') }}"
+                data-i18n-placeholder="fetch.placeholder"
                 class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-2xl px-4 py-3.5 text-white placeholder-slate-500 text-base outline-none transition pr-10 font-medium"
                 autocomplete="off"
                 required
@@ -100,7 +119,10 @@
                 type="button"
                 id="fetch-clear-input"
                 class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-1 rounded-lg cursor-pointer"
-                title="清除输入"
+                title="{{ t('fetch.clearInput') }}"
+                aria-label="{{ t('fetch.clearInput') }}"
+                data-i18n-title="fetch.clearInput"
+                data-i18n-aria-label="fetch.clearInput"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -108,10 +130,10 @@
               </button>
             </div>
             <p class="text-xs text-slate-500 mt-2 flex items-center gap-1.5">
-              <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-3.5 h-3.5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 010 18z" />
               </svg>
-              系统已自动容错，若输入了 .zip / .rar / .7z 等后缀会自动剥离匹配。
+              <span data-i18n="fetch.hint">{{ t('fetch.hint') }}</span>
             </p>
           </div>
 
@@ -125,19 +147,19 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            <span class="pointer-events-none">获取解压密码</span>
+            <span class="pointer-events-none" data-i18n="fetch.submit">{{ t('fetch.submit') }}</span>
           </button>
         </form>
 
         <!-- Fetch Result Card -->
         <div id="fetch-result-card" class="hidden mt-6 pt-6 border-t border-slate-800/80 animate-fade-in">
           <div class="bg-gradient-to-b from-indigo-950/40 to-slate-900/90 border border-indigo-500/30 rounded-2xl p-5 space-y-4">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-xs font-semibold text-indigo-300 uppercase tracking-wider flex items-center gap-1.5 shrink-0">
                 <span class="w-2 h-2 rounded-full bg-indigo-400 animate-ping"></span>
-                提取成功
+                <span data-i18n="fetch.success">{{ t('fetch.success') }}</span>
               </span>
-              <span id="fetch-display-filename" class="text-xs text-slate-400 font-mono font-medium"></span>
+              <span id="fetch-display-filename" class="text-xs text-slate-400 font-mono font-medium truncate"></span>
             </div>
 
             <!-- Password Display -->
@@ -151,40 +173,38 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                <span class="copy-label">复制密码</span>
+                <span class="copy-label" data-i18n="copy.password">{{ t('copy.password') }}</span>
               </button>
             </div>
 
             <!-- Meta stats (Remaining views and Countdown) -->
             <div class="grid grid-cols-2 gap-3 pt-1">
               <div class="bg-slate-950/50 rounded-xl p-3 border border-slate-800/80 flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                <div class="w-8 h-8 shrink-0 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </div>
                 <div>
-                  <div class="text-[11px] text-slate-400">剩余查看次数</div>
-                  <div id="fetch-views-left" class="text-sm font-semibold text-slate-200">0 次</div>
+                  <div class="text-[11px] text-slate-400" data-i18n="fetch.viewsLeftLabel">{{ t('fetch.viewsLeftLabel') }}</div>
+                  <div id="fetch-views-left" class="text-sm font-semibold text-slate-200">{{ t('unit.views', count=0) }}</div>
                 </div>
               </div>
 
               <div class="bg-slate-950/50 rounded-xl p-3 border border-slate-800/80 flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                <div class="w-8 h-8 shrink-0 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 010 18z" />
                   </svg>
                 </div>
                 <div>
-                  <div class="text-[11px] text-slate-400">有效倒计时</div>
+                  <div class="text-[11px] text-slate-400" data-i18n="fetch.countdownLabel">{{ t('fetch.countdownLabel') }}</div>
                   <div id="fetch-countdown" class="text-sm font-semibold text-slate-200">--:--:--</div>
                 </div>
               </div>
             </div>
 
-            <p class="text-xs text-amber-400/80 bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20 text-center">
-              ⚠️ 密码将在次数用尽或倒计时归零后彻底销毁，请妥善保存！
-            </p>
+            <p class="text-xs text-amber-400/80 bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20 text-center" data-i18n="fetch.warning">{{ t('fetch.warning') }}</p>
           </div>
         </div>
 
@@ -193,7 +213,7 @@
           <svg class="w-5 h-5 text-rose-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-          <div class="flex-1" id="fetch-error-msg">密码不存在或已失效。</div>
+          <div class="flex-1" id="fetch-error-msg" data-i18n="fetch.errorDefault">{{ t('fetch.errorDefault') }}</div>
         </div>
       </div>
     </section>
@@ -202,21 +222,18 @@
     <section id="panel-generate" class="hidden space-y-6">
       <div class="bg-slate-900/70 border border-slate-800/80 rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden">
         <div class="mb-6">
-          <h2 class="text-xl font-semibold text-white tracking-tight">生成 / 覆盖密码</h2>
-          <p class="text-sm text-slate-400 mt-1">
-            为将要发送的压缩包文件生成临时密码。若输入已存在的文件名，将提供安全确认并清除旧记录。
-          </p>
+          <h2 class="text-xl font-semibold text-white tracking-tight" data-i18n="gen.title">{{ t('gen.title') }}</h2>
+          <p class="text-sm text-slate-400 mt-1" data-i18n="gen.desc">{{ t('gen.desc') }}</p>
         </div>
 
         <form id="form-generate" class="space-y-5" novalidate>
           <div>
-            <label for="gen-filename" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-              文件名（不含扩展名）
-            </label>
+            <label for="gen-filename" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2" data-i18n="form.filenameLabel">{{ t('form.filenameLabel') }}</label>
             <input
               type="text"
               id="gen-filename"
-              placeholder="例如：2026-项目交接"
+              placeholder="{{ t('gen.placeholder') }}"
+              data-i18n-placeholder="gen.placeholder"
               class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 rounded-2xl px-4 py-3.5 text-white placeholder-slate-500 text-base outline-none transition font-medium"
               autocomplete="off"
               required
@@ -227,11 +244,11 @@
           <div class="border border-slate-800/80 rounded-2xl bg-slate-950/40 p-4 space-y-4">
             <div class="flex items-center justify-between cursor-pointer select-none" id="toggle-advanced-opts">
               <span class="text-xs font-semibold text-slate-300 flex items-center gap-2">
-                <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 h-4 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                自定义策略与密码设置
+                <span data-i18n="gen.advanced">{{ t('gen.advanced') }}</span>
               </span>
               <svg id="arrow-advanced" class="w-4 h-4 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -240,9 +257,9 @@
 
             <div id="advanced-opts-body" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-800/80">
               <div>
-                <div class="flex items-center justify-between mb-1">
-                  <label for="gen-expire-hours" class="text-xs text-slate-400">有效期（小时）</label>
-                  <span class="text-[11px] text-slate-500">支持任意时长</span>
+                <div class="flex items-center justify-between gap-2 mb-1">
+                  <label for="gen-expire-hours" class="text-xs text-slate-400" data-i18n="gen.expireLabel">{{ t('gen.expireLabel') }}</label>
+                  <span class="text-[11px] text-slate-500" data-i18n="gen.expireHint">{{ t('gen.expireHint') }}</span>
                 </div>
                 <input
                   type="number"
@@ -254,19 +271,19 @@
                   class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-indigo-500"
                 />
                 <div class="flex flex-wrap gap-1.5 mt-2">
-                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-transparent transition cursor-pointer" data-hours="0.5">30分钟</button>
-                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-transparent transition cursor-pointer" data-hours="1">1小时</button>
-                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/40 transition cursor-pointer" data-hours="2">2小时(默认)</button>
-                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-transparent transition cursor-pointer" data-hours="6">6小时</button>
-                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-transparent transition cursor-pointer" data-hours="24">24小时</button>
-                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-transparent transition cursor-pointer" data-hours="72">3天</button>
+                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-transparent transition cursor-pointer" data-hours="0.5" data-i18n="preset.30m">{{ t('preset.30m') }}</button>
+                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-transparent transition cursor-pointer" data-hours="1" data-i18n="preset.1h">{{ t('preset.1h') }}</button>
+                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/40 transition cursor-pointer" data-hours="2" data-i18n="preset.2hDefault">{{ t('preset.2hDefault') }}</button>
+                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-transparent transition cursor-pointer" data-hours="6" data-i18n="preset.6h">{{ t('preset.6h') }}</button>
+                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-transparent transition cursor-pointer" data-hours="24" data-i18n="preset.24h">{{ t('preset.24h') }}</button>
+                  <button type="button" class="preset-hour-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-transparent transition cursor-pointer" data-hours="72" data-i18n="preset.3d">{{ t('preset.3d') }}</button>
                 </div>
               </div>
 
               <div>
-                <div class="flex items-center justify-between mb-1">
-                  <label for="gen-max-views" class="text-xs text-slate-400">最大提取次数</label>
-                  <span class="text-[11px] text-slate-500">阅后即焚</span>
+                <div class="flex items-center justify-between gap-2 mb-1">
+                  <label for="gen-max-views" class="text-xs text-slate-400" data-i18n="gen.maxViewsLabel">{{ t('gen.maxViewsLabel') }}</label>
+                  <span class="text-[11px] text-slate-500" data-i18n="gen.maxViewsHint">{{ t('gen.maxViewsHint') }}</span>
                 </div>
                 <input
                   type="number"
@@ -278,19 +295,20 @@
                   class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-indigo-500"
                 />
                 <div class="flex flex-wrap gap-1.5 mt-2">
-                  <button type="button" class="preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/40 transition cursor-pointer" data-views="1">仅1次(默认/阅后即焚)</button>
-                  <button type="button" class="preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-transparent transition cursor-pointer" data-views="3">3次</button>
-                  <button type="button" class="preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-transparent transition cursor-pointer" data-views="5">5次</button>
-                  <button type="button" class="preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-transparent transition cursor-pointer" data-views="10">10次</button>
+                  <button type="button" class="preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 hover:bg-indigo-600/40 transition cursor-pointer" data-views="1" data-i18n="preset.1vDefault">{{ t('preset.1vDefault') }}</button>
+                  <button type="button" class="preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-transparent transition cursor-pointer" data-views="3" data-i18n="preset.3v">{{ t('preset.3v') }}</button>
+                  <button type="button" class="preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-transparent transition cursor-pointer" data-views="5" data-i18n="preset.5v">{{ t('preset.5v') }}</button>
+                  <button type="button" class="preset-view-btn text-[11px] px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-transparent transition cursor-pointer" data-views="10" data-i18n="preset.10v">{{ t('preset.10v') }}</button>
                 </div>
               </div>
 
               <div class="sm:col-span-2">
-                <label for="gen-custom-password" class="block text-xs text-slate-400 mb-1">指定特定密码（留空则系统自动随机生成高强度密码）</label>
+                <label for="gen-custom-password" class="block text-xs text-slate-400 mb-1" data-i18n="gen.customLabel">{{ t('gen.customLabel') }}</label>
                 <input
                   type="text"
                   id="gen-custom-password"
-                  placeholder="留空则随机生成"
+                  placeholder="{{ t('gen.customPlaceholder') }}"
+                  data-i18n-placeholder="gen.customPlaceholder"
                   class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-indigo-500 font-mono"
                 />
               </div>
@@ -306,28 +324,28 @@
             <svg class="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
-            <span class="pointer-events-none">生成密码并保存</span>
+            <span class="pointer-events-none" data-i18n="gen.submit">{{ t('gen.submit') }}</span>
           </button>
         </form>
 
         <!-- Generate Result Card -->
         <div id="gen-result-card" class="hidden mt-6 pt-6 border-t border-slate-800/80 animate-fade-in">
           <div class="bg-gradient-to-b from-emerald-950/40 to-slate-900/90 border border-emerald-500/30 rounded-2xl p-5 space-y-4">
-            <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+            <div class="flex items-center justify-between gap-3">
+              <span class="text-xs font-semibold text-emerald-300 uppercase tracking-wider flex items-center gap-1.5 shrink-0">
                 <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
-                密码已成功生成
+                <span data-i18n="gen.success">{{ t('gen.success') }}</span>
               </span>
-              <span id="gen-display-filename" class="text-xs text-slate-400 font-mono"></span>
+              <span id="gen-display-filename" class="text-xs text-slate-400 font-mono truncate"></span>
             </div>
 
             <!-- Generated Password Block -->
             <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 flex items-center justify-between gap-3">
-              <div>
-                <span class="text-[11px] text-slate-400 block mb-1">压缩包解压密码：</span>
-                <span id="gen-password-text" class="font-mono text-2xl font-bold tracking-wider text-emerald-400 select-all"></span>
+              <div class="min-w-0">
+                <span class="text-[11px] text-slate-400 block mb-1" data-i18n="gen.passwordLabel">{{ t('gen.passwordLabel') }}</span>
+                <span id="gen-password-text" class="font-mono text-2xl font-bold tracking-wider text-emerald-400 select-all break-all"></span>
               </div>
               <button
                 type="button"
@@ -337,13 +355,13 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                <span class="copy-label">复制密码</span>
+                <span class="copy-label" data-i18n="copy.password">{{ t('copy.password') }}</span>
               </button>
             </div>
 
             <!-- Share URL Block -->
             <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-4 space-y-2">
-              <span class="text-[11px] text-slate-400 block">直达提取分享链接（接收方打开直接提取）：</span>
+              <span class="text-[11px] text-slate-400 block" data-i18n="gen.shareLabel">{{ t('gen.shareLabel') }}</span>
               <div class="flex items-center gap-2">
                 <input
                   type="text"
@@ -360,16 +378,14 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 015.656 0l4 4a4 4 0 01-5.656 5.656l-1.102-1.101" />
                   </svg>
-                  <span class="copy-label">复制链接</span>
+                  <span class="copy-label" data-i18n="copy.link">{{ t('copy.link') }}</span>
                 </button>
               </div>
             </div>
 
-            <div class="text-xs text-slate-400 flex items-center justify-between pt-1">
-              <span id="gen-policy-info">⏳ 有效期：2 小时 | 最多查看 1 次</span>
-              <button type="button" id="btn-delete-this-record" class="text-rose-400 hover:text-rose-300 underline text-xs cursor-pointer">
-                立即清除此记录
-              </button>
+            <div class="text-xs text-slate-400 flex items-center justify-between gap-3 pt-1">
+              <span id="gen-policy-info"></span>
+              <button type="button" id="btn-delete-this-record" class="text-rose-400 hover:text-rose-300 underline text-xs cursor-pointer shrink-0" data-i18n="gen.deleteRecord">{{ t('gen.deleteRecord') }}</button>
             </div>
           </div>
         </div>
@@ -379,16 +395,16 @@
     <!-- Quick Info Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
       <div class="bg-slate-900/40 border border-slate-800/60 rounded-2xl p-4">
-        <div class="text-indigo-400 mb-1 font-semibold text-xs">🕒 双重失效保障</div>
-        <p class="text-xs text-slate-400">时间（默认2h）或提取次数（默认1次）任一耗尽即自动作废并销毁。</p>
+        <div class="text-indigo-400 mb-1 font-semibold text-xs" data-i18n="info.dual.title">{{ t('info.dual.title') }}</div>
+        <p class="text-xs text-slate-400" data-i18n="info.dual.desc" data-i18n-args='{{ {"hours": default_expire_hours, "views": default_max_views}|tojson }}'>{{ t('info.dual.desc', hours=default_expire_hours, views=default_max_views) }}</p>
       </div>
       <div class="bg-slate-900/40 border border-slate-800/60 rounded-2xl p-4">
-        <div class="text-indigo-400 mb-1 font-semibold text-xs">🛡️ 防误操作提示</div>
-        <p class="text-xs text-slate-400">若重新生成同名文件密码，系统将警示确认，防止旧记录被意外覆盖清除。</p>
+        <div class="text-indigo-400 mb-1 font-semibold text-xs" data-i18n="info.guard.title">{{ t('info.guard.title') }}</div>
+        <p class="text-xs text-slate-400" data-i18n="info.guard.desc">{{ t('info.guard.desc') }}</p>
       </div>
       <div class="bg-slate-900/40 border border-slate-800/60 rounded-2xl p-4">
-        <div class="text-indigo-400 mb-1 font-semibold text-xs">🚀 极简免登分发</div>
-        <p class="text-xs text-slate-400">无繁琐账号系统，支持一键生成直达链接，好友点击即可秒解密。</p>
+        <div class="text-indigo-400 mb-1 font-semibold text-xs" data-i18n="info.easy.title">{{ t('info.easy.title') }}</div>
+        <p class="text-xs text-slate-400" data-i18n="info.easy.desc">{{ t('info.easy.desc') }}</p>
       </div>
     </div>
   </main>
@@ -403,28 +419,28 @@
       </div>
 
       <div>
-        <h3 class="text-lg font-bold text-white tracking-tight">⚠️ 检测到已存在有效旧记录</h3>
-        <p class="text-xs text-amber-300/90 mt-1">您输入的同名文件仍处于有效期内，重新生成将清除旧密码！</p>
+        <h3 class="text-lg font-bold text-white tracking-tight" data-i18n="modal.title">{{ t('modal.title') }}</h3>
+        <p class="text-xs text-amber-300/90 mt-1" data-i18n="modal.subtitle">{{ t('modal.subtitle') }}</p>
       </div>
 
       <div class="bg-slate-950 rounded-xl p-4 border border-slate-800 space-y-2 text-xs">
-        <div class="flex justify-between text-slate-400">
-          <span>文件名：</span>
-          <span id="modal-filename" class="font-mono text-white font-medium"></span>
+        <div class="flex justify-between gap-3 text-slate-400">
+          <span class="shrink-0" data-i18n="modal.filename">{{ t('modal.filename') }}</span>
+          <span id="modal-filename" class="font-mono text-white font-medium text-right break-all"></span>
         </div>
-        <div class="flex justify-between text-slate-400">
-          <span>剩余可查看次数：</span>
-          <span id="modal-views-left" class="text-amber-400 font-semibold"></span>
+        <div class="flex justify-between gap-3 text-slate-400">
+          <span data-i18n="modal.viewsLeft">{{ t('modal.viewsLeft') }}</span>
+          <span id="modal-views-left" class="text-amber-400 font-semibold shrink-0"></span>
         </div>
-        <div class="flex justify-between text-slate-400">
-          <span>剩余有效时间：</span>
-          <span id="modal-time-left" class="text-cyan-400 font-semibold"></span>
+        <div class="flex justify-between gap-3 text-slate-400">
+          <span data-i18n="modal.timeLeft">{{ t('modal.timeLeft') }}</span>
+          <span id="modal-time-left" class="text-cyan-400 font-semibold shrink-0"></span>
         </div>
       </div>
 
       <div class="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 text-xs text-rose-300 leading-relaxed">
-        <span class="font-semibold">⚠️ 危险提示：</span>
-        一旦确认覆盖，<strong>旧文件名记录与密码将被立即永久清除</strong>。如果您已经将使用旧密码加密的压缩包发给他人，对方将<strong>无法再使用原密码解密</strong>！
+        <span class="font-semibold" data-i18n="modal.dangerTitle">{{ t('modal.dangerTitle') }}</span>
+        <span data-i18n="modal.dangerBody" data-i18n-html>{{ t('modal.dangerBody')|safe }}</span>
       </div>
 
       <div class="grid grid-cols-2 gap-3 pt-2">
@@ -432,16 +448,14 @@
           type="button"
           id="btn-modal-cancel"
           class="py-3 px-4 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-800 text-slate-300 text-sm font-medium transition cursor-pointer"
-        >
-          取消（保留旧密码）
-        </button>
+          data-i18n="modal.cancel"
+        >{{ t('modal.cancel') }}</button>
         <button
           type="button"
           id="btn-modal-confirm"
           class="py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold transition shadow-lg shadow-rose-600/30 cursor-pointer"
-        >
-          确认清除并重新生成
-        </button>
+          data-i18n="modal.confirm"
+        >{{ t('modal.confirm') }}</button>
       </div>
     </div>
   </div>
@@ -452,18 +466,19 @@
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
       </svg>
-      <span id="toast-text">已复制到剪贴板</span>
+      <span id="toast-text">{{ t('toast.copied') }}</span>
     </div>
   </div>
 
   <!-- Footer -->
   <footer class="border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
     <div class="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-      <div>PassDrop &bull; 临时压缩包密码发放服务</div>
-      <div>部署于私有 NAS &bull; <span class="font-mono">passdrop.tmhcorps.cn</span></div>
+      <div data-i18n="footer.tagline">{{ t('footer.tagline') }}</div>
+      <div><span data-i18n="footer.deploy">{{ t('footer.deploy') }}</span> &bull; <span class="font-mono">{{ base_host }}</span></div>
     </div>
   </footer>
 
-  <script src="/static/app.js?v=20260910"></script>
+  <script id="i18n-data" type="application/json">{{ i18n|tojson }}</script>
+  <script src="/static/app.js?v=20261023"></script>
 </body>
 </html>

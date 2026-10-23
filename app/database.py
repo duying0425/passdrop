@@ -106,7 +106,8 @@ def save_password(
 def increment_view(filename_key: str) -> Tuple[bool, Optional[Dict[str, Any]], str]:
     """
     Attempts to fetch the password and increments view count atomically.
-    Returns: (is_valid, record_or_none, error_message)
+    Returns: (is_valid, record_or_none, error_code)
+    error_code is one of: NOT_FOUND, EXHAUSTED, EXPIRED, REVOKED ("" on success).
     """
     now = int(time.time())
     with get_connection() as conn:
@@ -142,14 +143,14 @@ def increment_view(filename_key: str) -> Tuple[bool, Optional[Dict[str, Any]], s
             (filename_key,),
         ).fetchone()
         if not row:
-            return False, None, "未找到该文件名的密码记录"
+            return False, None, "NOT_FOUND"
 
         record = dict(row)
         if not record["is_active"]:
             # Marked inactive by a previous fetch that exhausted views or expired
             if record["view_count"] >= record["max_views"]:
-                return False, None, "该密码提取次数已达上限，无法再次获取"
-            return False, None, "该密码已失效或已被销毁"
+                return False, None, "EXHAUSTED"
+            return False, None, "REVOKED"
 
         if now > record["expires_at"]:
             conn.execute(
@@ -157,7 +158,7 @@ def increment_view(filename_key: str) -> Tuple[bool, Optional[Dict[str, Any]], s
                 (filename_key,),
             )
             conn.commit()
-            return False, None, "该密码已超过有效期（已过期）"
+            return False, None, "EXPIRED"
 
         if record["view_count"] >= record["max_views"]:
             conn.execute(
@@ -165,9 +166,9 @@ def increment_view(filename_key: str) -> Tuple[bool, Optional[Dict[str, Any]], s
                 (filename_key,),
             )
             conn.commit()
-            return False, None, "该密码提取次数已达上限，无法再次获取"
+            return False, None, "EXHAUSTED"
 
-        return False, None, "该密码已失效或已被销毁"
+        return False, None, "REVOKED"
 
 
 def delete_record(filename_key: str) -> bool:

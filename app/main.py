@@ -2,8 +2,9 @@ import asyncio
 import os
 import time
 from contextlib import asynccontextmanager
+from functools import partial
 from typing import Optional
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,6 +20,18 @@ from app.database import (
     save_password,
     increment_view,
     delete_record,
+)
+from app.i18n import (
+    FALLBACK_LANG,
+    LANG_COOKIE,
+    LANG_COOKIE_MAX_AGE,
+    LANGUAGES,
+    MESSAGES,
+    SUPPORTED_LANGS,
+    default_lang,
+    normalize_lang,
+    resolve_lang,
+    translate,
 )
 from app.scheduler import periodic_cleanup_task
 from app.utils import normalize_filename, generate_random_password
@@ -40,7 +53,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title=settings.SITE_TITLE,
+    title=settings.SITE_TITLE or "PassDrop",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url=None,
@@ -65,6 +78,8 @@ os.makedirs(TEMPLATES_DIR, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
+# Keep CJK text readable (and ~3x smaller) in |tojson output; <, >, & and ' are still escaped
+templates.env.policies["json.dumps_kwargs"] = {"ensure_ascii": False, "sort_keys": True}
 
 
 # --- Request & Response Models ---
@@ -84,21 +99,54 @@ class ClearRequest(BaseModel):
     filename: str = Field(..., min_length=1, max_length=200)
 
 
+def site_title(lang: str) -> str:
+    return settings.SITE_TITLE or translate(lang, "meta.title")
+
+
 # --- Routes ---
 @app.get("/", response_class=HTMLResponse)
-async def serve_index(request: Request, f: Optional[str] = None, file: Optional[str] = None):
+async def serve_index(
+    request: Request,
+    f: Optional[str] = None,
+    file: Optional[str] = None,
+    lang: Optional[str] = None,
+):
     initial_file = f or file or ""
-    return templates.TemplateResponse(
+    current_lang = resolve_lang(request)
+    response = templates.TemplateResponse(
         request=request,
         name="index.html",
         context={
-            "site_title": settings.SITE_TITLE,
+            "t": partial(translate, current_lang),
+            "lang": current_lang,
+            "html_lang": LANGUAGES[current_lang]["html_lang"],
+            "languages": LANGUAGES,
+            # Everything the client needs to switch language without a reload
+            # (reloading a ?f= link would consume another view)
+            "i18n": {
+                "lang": current_lang,
+                "fallback": FALLBACK_LANG,
+                "cookie": LANG_COOKIE,
+                "cookieMaxAge": LANG_COOKIE_MAX_AGE,
+                "titleOverride": settings.SITE_TITLE,
+                "htmlLang": {code: info["html_lang"] for code, info in LANGUAGES.items()},
+                "messages": MESSAGES,
+            },
+            "site_title": site_title(current_lang),
             "base_url": settings.BASE_URL,
+            "base_host": urlparse(settings.BASE_URL).netloc or settings.BASE_URL,
             "initial_file": initial_file,
             "default_expire_hours": settings.DEFAULT_EXPIRE_HOURS,
             "default_max_views": settings.DEFAULT_MAX_VIEWS,
         },
     )
+    # Remember an explicit ?lang= choice for later visits
+    if normalize_lang(lang):
+        response.set_cookie(
+            LANG_COOKIE, current_lang, max_age=LANG_COOKIE_MAX_AGE, samesite="lax"
+        )
+    response.headers["Vary"] = "Accept-Language, Cookie"
+    return response
 
 
 @app.get("/health")
@@ -107,28 +155,41 @@ async def health_check():
 
 
 @app.get("/api/config")
-async def get_public_config():
+async def get_public_config(request: Request):
     return {
-        "site_title": settings.SITE_TITLE,
+        "site_title": site_title(resolve_lang(request)),
         "base_url": settings.BASE_URL,
         "default_expire_hours": settings.DEFAULT_EXPIRE_HOURS,
         "default_max_views": settings.DEFAULT_MAX_VIEWS,
         "password_length": settings.PASSWORD_LENGTH,
+        "default_lang": default_lang(),
+        "supported_langs": list(SUPPORTED_LANGS),
     }
 
 
 @app.post("/api/fetch")
-async def fetch_password(req: FetchRequest):
+async def fetch_password(req: FetchRequest, request: Request):
     """
     Fetches the password for a given filename. Consumes 1 view count.
     """
+    lang = resolve_lang(request)
     key, display = normalize_filename(req.filename)
     if not key:
-        return {"ok": False, "message": "请输入有效的文件名", "status": "invalid"}
+        return {
+            "ok": False,
+            "code": "INVALID_FILENAME",
+            "message": translate(lang, "error.INVALID_FILENAME"),
+            "status": "invalid",
+        }
 
-    valid, record, msg = increment_view(key)
+    valid, record, error_code = increment_view(key)
     if not valid or not record:
-        return {"ok": False, "message": msg, "status": "expired_or_not_found"}
+        return {
+            "ok": False,
+            "code": error_code,
+            "message": translate(lang, f"error.{error_code}"),
+            "status": "expired_or_not_found",
+        }
 
     now = int(time.time())
     views_left = max(0, record["max_views"] - record["view_count"])
@@ -147,15 +208,20 @@ async def fetch_password(req: FetchRequest):
 
 
 @app.post("/api/generate")
-async def generate_password_endpoint(req: GenerateRequest):
+async def generate_password_endpoint(req: GenerateRequest, request: Request):
     """
     Generates a password for a filename.
     If the file exists and is active, and force=False, prompts confirmation.
     If force=True, clears the old record and creates a fresh one.
     """
+    lang = resolve_lang(request)
     key, display = normalize_filename(req.filename)
     if not key:
-        return {"ok": False, "message": "请输入有效的文件名"}
+        return {
+            "ok": False,
+            "code": "INVALID_FILENAME",
+            "message": translate(lang, "error.INVALID_FILENAME"),
+        }
 
     now = int(time.time())
     existing = get_record(key)
@@ -173,7 +239,7 @@ async def generate_password_endpoint(req: GenerateRequest):
             return {
                 "ok": False,
                 "code": "EXISTS",
-                "message": "该文件名已存在有效密码！",
+                "message": translate(lang, "error.EXISTS"),
                 "existing": {
                     "filename": existing["filename_display"],
                     "created_at": existing["created_at"],
@@ -219,16 +285,25 @@ async def generate_password_endpoint(req: GenerateRequest):
 
 
 @app.post("/api/clear")
-async def clear_endpoint(req: ClearRequest):
+async def clear_endpoint(req: ClearRequest, request: Request):
     """
     Explicitly removes a filename password record.
     """
+    lang = resolve_lang(request)
     key, display = normalize_filename(req.filename)
     if not key:
-        return {"ok": False, "message": "请输入有效的文件名"}
+        return {
+            "ok": False,
+            "code": "INVALID_FILENAME",
+            "message": translate(lang, "error.INVALID_FILENAME"),
+        }
 
     deleted = delete_record(key)
     if deleted:
-        return {"ok": True, "message": f"文件名【{display}】的密码记录已彻底清除"}
+        return {"ok": True, "message": translate(lang, "api.cleared", name=display)}
     else:
-        return {"ok": False, "message": "未找到该文件名的记录，无需清除"}
+        return {
+            "ok": False,
+            "code": "NOT_FOUND",
+            "message": translate(lang, "error.CLEAR_NOT_FOUND"),
+        }

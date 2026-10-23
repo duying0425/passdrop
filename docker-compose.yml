@@ -9,7 +9,8 @@ services:
     volumes:
       - ./data:/data  # 持久化 SQLite 数据目录
     environment:
-      - SITE_TITLE=PassDrop - 压缩包临时密码发放
+      # - SITE_TITLE=PassDrop  # 可选：设置后所有语言统一使用该标题；不设置则按页面语言自动显示
+      - DEFAULT_LANG=zh  # 默认语言（zh / en / ja），无法从浏览器识别语言时使用
       - BASE_URL=https://passdrop.tmhcorps.cn
       - DEFAULT_EXPIRE_HOURS=2
       - DEFAULT_MAX_VIEWS=1

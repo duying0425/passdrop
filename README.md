@@ -11,7 +11,7 @@ PassDrop 是一个专为文件传输场景打造的极简、阅后即焚型临�
 - 🚀 **完全公开，免登录**：无繁琐注册/登录体系，即用即走。
 - 🕒 **双重失效策略**：
   - **时间维度**：默认 2 小时后自动过期失效（支持自定义 0.1 ~ 720 小时）。
-  - **次数维度**：默认被提取 3 次后立即销毁（支持自定义 1 ~ 1000 次）。
+  - **次数维度**：默认被提取 1 次后立即销毁（阅后即焚，支持自定义 1 ~ 1000 次）。
   - 无论哪个条件先满足，密码均立即永久销毁。
 - 🛡️ **防误操作高危警示**：
   - 发件人输入已存在的文件名重新生成时，系统弹出高危二次确认弹窗，明确提示“重新生成将清除旧密码，原压缩包可能无法再解密”，杜绝误触覆盖。
@@ -20,6 +20,9 @@ PassDrop 是一个专为文件传输场景打造的极简、阅后即焚型临�
   - 自动去除首尾空格、大小写自动规范化。
 - 🔗 **网页后缀 URL 传参**：
   - 支持 `?f=文件名` 或 `?file=文件名`，点开链接自动填充并定位提取，收件人 0 打字成本。
+- 🌐 **多语言界面（简体中文 / English / 日本語）**：
+  - 根据浏览器语言自动显示，右上角可随时切换（无需刷新页面，不会额外消耗提取次数）。
+  - API 错误信息同样支持三种语言，并附带稳定的错误码 `code` 便于脚本判断。
 - ⚡ **完备的 RESTful API**：
   - 方便结合本地脚本、CI/CD、自动化打包脚本（Python / PowerShell / Shell）实现全流程无感打包上报密码。
 - 🐳 **轻量 Docker 化**：
@@ -90,7 +93,7 @@ PassDrop 提供了完整的 HTTP API，方便集成到各类脚本或外部系�
   "force": false
 }
 ```
-> 若文件已有未失效密码且未指定 `"force": true`，将返回 `409 Conflict` 阻止意外覆盖。若确认覆盖请传入 `"force": true`。
+> 若文件已有未失效密码且未指定 `"force": true`，将返回 `"ok": false, "code": "EXISTS"`（附带旧记录信息 `existing`）阻止意外覆盖。若确认覆盖请传入 `"force": true`。
 
 **响应体 (JSON)**：
 ```json
@@ -128,7 +131,34 @@ PassDrop 提供了完整的 HTTP API，方便集成到各类脚本或外部系�
   "expires_at": 1788540473
 }
 ```
-> 次数耗尽或过期后再次调用将返回 `404 Not Found` 并提示密码已失效。
+> 次数耗尽或过期后再次调用将返回 `"ok": false` 并通过 `code` / `message` 说明原因（见下方错误码）。
+
+##### ③ 错误响应与多语言
+
+业务类错误返回 HTTP `200` 与 `"ok": false`，并包含稳定的错误码 `code` 和本地化的提示 `message`：
+
+```json
+{
+  "ok": false,
+  "code": "EXHAUSTED",
+  "message": "This password has reached its retrieval limit and is no longer available.",
+  "status": "expired_or_not_found"
+}
+```
+
+| `code` | 含义 |
+| :--- | :--- |
+| `INVALID_FILENAME` | 文件名去除首尾空格后为空 |
+| `NOT_FOUND` | 未找到该文件名的记录 |
+| `EXHAUSTED` | 提取次数已用尽 |
+| `EXPIRED` | 已超过有效期 |
+| `REVOKED` | 已失效或已被销毁 |
+| `EXISTS` | 生成时发现同名有效记录（需 `force: true` 才能覆盖） |
+
+> 请求参数本身不合法时（如 `filename` 为空字符串或超过 200 字符、`expire_hours` 不在 (0, 720]、`max_views` 不在 [1, 1000]、`custom_password` 超过 64 字符），由 FastAPI 返回 HTTP `422` 及 `detail` 数组，不含 `code` / `message`。
+
+`message` 的语言按以下优先级决定：URL 参数 `?lang=zh|en|ja` → Cookie `passdrop_lang` → 请求头 `Accept-Language` → 配置项 `DEFAULT_LANG`（默认中文）。
+脚本调用时建议根据 `code` 判断结果，例如 `POST /api/fetch?lang=en` 即可获得英文提示；未指定语言的 cURL / PowerShell / Python 脚本保持返回中文，与旧版本兼容。
 
 ---
 
@@ -189,13 +219,45 @@ Write-Host "提取链接: $($response.share_url)"
 
 ---
 
+## 🌐 多语言支持（简体中文 / English / 日本語）
+
+### 语言如何确定
+
+页面与 API 按以下优先级选择语言，任一命中即生效：
+
+1. URL 参数 `?lang=zh` / `?lang=en` / `?lang=ja`（页面访问时会写入 Cookie 记住选择）
+2. Cookie `passdrop_lang`（用户在右上角切换语言时写入，有效期 1 年）
+3. 浏览器请求头 `Accept-Language`（如 `ja-JP`、`en-US`、`zh-TW` 均可识别）
+4. 配置项 `DEFAULT_LANG`（默认 `zh`）
+
+- 页面由服务端直接按所选语言渲染，无闪烁；右上角切换语言时**不刷新页面**，因此通过 `?f=` 链接打开的提取结果不会因切换语言而再次消耗提取次数。
+- 分享链接不附带语言参数，收件人会自动看到自己浏览器语言的界面。
+
+### 翻译文件维护
+
+所有文案集中在 `app/locales/` 目录，三种语言各一个 JSON 文件（以 `zh.json` 为基准）：
+
+```text
+app/locales/zh.json   # 简体中文（基准，缺失的键会回退到这里）
+app/locales/en.json   # English
+app/locales/ja.json   # 日本語
+```
+
+- **修改文案**：直接编辑对应 JSON 中的值即可；`{name}`、`{count}` 等占位符和 `<strong>` 标签需在三种语言中保持一致。
+- **新增文案**：在三个文件中添加同一个键，模板中使用 `{{ t('键名') }}` 并加上 `data-i18n="键名"`（切换语言时自动更新），脚本中使用 `t("键名")`。
+- **新增语言**：新建 `app/locales/<代码>.json`，并在 `app/i18n.py` 的 `LANGUAGES` 中登记名称与 `<html lang>` 值。
+- **自动校验**：`pytest` 会检查各语言的键、占位符与 HTML 标签是否一致，以及模板 / 脚本引用的键是否都已定义，提交前运行即可发现漏翻。
+
+---
+
 ## 🛠️ 配置项说明
 
 所有参数均可通过环境变量或 `.env` 配置文件进行自定义：
 
 | 环境变量名 | 默认值 | 详细说明 |
 | :--- | :--- | :--- |
-| `SITE_TITLE` | `PassDrop - 压缩包临时密码发放` | 网站顶部展示的站点标题 |
+| `SITE_TITLE` | 空 | 可选。留空时按页面语言显示本地化标题；设置后所有语言统一使用该标题 |
+| `DEFAULT_LANG` | `zh` | 默认语言（`zh` / `en` / `ja`），无法从 URL、Cookie 或浏览器语言匹配时使用 |
 | `BASE_URL` | `https://passdrop.tmhcorps.cn` | 站点对外访问基础域名，用于拼接直达分享链接 |
 | `DEFAULT_EXPIRE_HOURS` | `2` | 默认密码有效期（小时，支持小数如 0.5） |
 | `DEFAULT_MAX_VIEWS` | `1` | 默认最大允许查看/提取密码的次数 |
@@ -239,6 +301,20 @@ cd /volume2/docker/passdrop
 git pull
 docker-compose up -d --build
 ```
+
+### 云服务器（如阿里云）通过 GitHub 更新
+
+云服务器上同样以 Git 仓库 + Docker Compose 方式运行（例如 `~/passdrop`，端口仅绑定 `127.0.0.1:8082` 供 Nginx 反代）。本地修改推送到 GitHub 后，在服务器执行：
+
+```bash
+ssh aliyun
+cd ~/passdrop
+git pull --ff-only
+docker-compose up -d --build
+curl -s http://127.0.0.1:8082/health   # 返回 {"status":"ok"} 即更新成功
+```
+
+> 若服务器上有未提交的本地修改（如 `docker-compose.yml` 中的端口绑定）导致 `git pull` 失败，可先 `git stash`，拉取后再 `git stash pop` 恢复。
 
 ---
 

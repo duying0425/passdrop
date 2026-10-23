@@ -1,5 +1,114 @@
 // PassDrop Client-side Logic
 
+// --- i18n ---
+// Dictionaries for every language are embedded by the server (#i18n-data), so switching
+// language re-renders in place without a reload (reloading a ?f= link would burn a view).
+const I18N = (() => {
+  try {
+    return JSON.parse(document.getElementById("i18n-data").textContent);
+  } catch (err) {
+    return { lang: "zh", fallback: "zh", cookie: "passdrop_lang", cookieMaxAge: 31536000, titleOverride: "", htmlLang: {}, messages: {} };
+  }
+})();
+let currentLang = I18N.lang;
+
+function escapeHtml(value) {
+  return value.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+
+function hasMessage(key) {
+  const table = I18N.messages[currentLang] || {};
+  const fallback = I18N.messages[I18N.fallback] || {};
+  return key in table || key in fallback;
+}
+
+// Looks up a message and fills {placeholders}; args are HTML-escaped when the result is used as HTML
+function t(key, args = {}, html = false) {
+  const table = I18N.messages[currentLang] || {};
+  const fallback = I18N.messages[I18N.fallback] || {};
+  const text = table[key] ?? fallback[key] ?? key;
+  return text.replace(/\{(\w+)\}/g, (match, name) => {
+    if (!(name in args)) return match;
+    const value = String(args[name]);
+    return html ? escapeHtml(value) : value;
+  });
+}
+
+function renderI18n(el) {
+  let args = {};
+  if (el.dataset.i18nArgs) {
+    try {
+      args = JSON.parse(el.dataset.i18nArgs);
+    } catch (err) {
+      args = {};
+    }
+  }
+  if (el.hasAttribute("data-i18n-html")) {
+    el.innerHTML = t(el.dataset.i18n, args, true);
+  } else {
+    el.textContent = t(el.dataset.i18n, args);
+  }
+}
+
+// Binds an element to a message key so it is re-rendered when the language changes
+function setI18n(el, key, args = null) {
+  if (!el) return;
+  el.dataset.i18n = key;
+  if (args) {
+    el.dataset.i18nArgs = JSON.stringify(args);
+  } else {
+    delete el.dataset.i18nArgs;
+  }
+  renderI18n(el);
+}
+
+// Sets literal text (numbers, server messages) and detaches the element from re-translation
+function setPlainText(el, text) {
+  if (!el) return;
+  delete el.dataset.i18n;
+  delete el.dataset.i18nArgs;
+  el.textContent = text;
+}
+
+function applyTranslations() {
+  document.querySelectorAll("[data-i18n]").forEach(renderI18n);
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+    el.title = t(el.dataset.i18nTitle);
+  });
+  document.querySelectorAll("[data-i18n-aria-label]").forEach((el) => {
+    el.setAttribute("aria-label", t(el.dataset.i18nAriaLabel));
+  });
+  document.documentElement.lang = I18N.htmlLang[currentLang] || currentLang;
+  document.title = I18N.titleOverride || t("meta.title");
+  const metaDescription = document.querySelector('meta[name="description"]');
+  if (metaDescription) metaDescription.setAttribute("content", t("meta.description"));
+}
+
+function setLanguage(lang) {
+  if (!I18N.messages[lang] || lang === currentLang) return;
+  currentLang = lang;
+  try {
+    document.cookie = `${I18N.cookie}=${lang}; path=/; max-age=${I18N.cookieMaxAge}; SameSite=Lax`;
+  } catch (err) {
+    // Cookies blocked: the choice still applies to this page
+  }
+  // An explicit ?lang= in the address bar outranks the cookie, so keep it in sync for refreshes
+  const url = new URL(window.location.href);
+  if (url.searchParams.has("lang")) {
+    url.searchParams.set("lang", lang);
+    history.replaceState(history.state, "", url);
+  }
+  applyTranslations();
+}
+
+// API calls carry the UI language so server messages match the page
+function apiUrl(path) {
+  return `${path}?lang=${encodeURIComponent(currentLang)}`;
+}
+
 // Global functions exposed to window for inline onclick reliability
 window.switchTab = function(tab) {
   const tabFetchBtn = document.getElementById("tab-fetch-btn");
@@ -28,6 +137,8 @@ window.switchTab = function(tab) {
 
 document.addEventListener("DOMContentLoaded", () => {
   // Elements
+  const langSelect = document.getElementById("lang-select");
+
   const inputFetchFilename = document.getElementById("fetch-filename");
   const btnDoFetch = document.getElementById("btn-do-fetch");
   const fetchClearInput = document.getElementById("fetch-clear-input");
@@ -71,8 +182,14 @@ document.addEventListener("DOMContentLoaded", () => {
   let pendingGenerateParams = null;
   let currentGeneratedFilename = "";
 
+  // Language switcher
+  if (langSelect) {
+    langSelect.value = currentLang;
+    langSelect.addEventListener("change", () => setLanguage(langSelect.value));
+  }
+
   // Helper: Toast notification
-  function showToast(msg = "已复制到剪贴板") {
+  function showToast(msg = t("toast.copied")) {
     if (!toast || !toastText) return;
     toastText.textContent = msg;
     toast.classList.remove("hidden", "translate-y-4", "opacity-0");
@@ -100,25 +217,26 @@ document.addEventListener("DOMContentLoaded", () => {
         document.execCommand("copy");
         document.body.removeChild(textarea);
       }
-      showToast("复制成功！");
+      showToast(t("toast.copySuccess"));
       if (btnElement) {
         const label = btnElement.querySelector(".copy-label");
         if (label) {
-          const original = label.textContent;
-          label.textContent = "已复制!";
+          // Remember the label's own key once, so rapid repeat clicks still restore it
+          const restoreKey = label.dataset.i18nDefault || label.dataset.i18n;
+          label.dataset.i18nDefault = restoreKey;
+          setI18n(label, "copy.done");
           setTimeout(() => {
-            label.textContent = original;
+            setI18n(label, restoreKey);
           }, 1800);
         }
       }
     } catch (err) {
-      alert("复制失败，请手动选择复制。");
+      alert(t("copy.failed"));
     }
   }
 
   // Helper: Format seconds to HH:MM:SS
   function formatSeconds(totalSeconds) {
-    if (totalSeconds <= 0) return "已过期";
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
@@ -127,6 +245,14 @@ document.addEventListener("DOMContentLoaded", () => {
       return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
     }
     return `${pad(minutes)}:${pad(seconds)}`;
+  }
+
+  function renderCountdown(totalSeconds) {
+    if (totalSeconds <= 0) {
+      setI18n(fetchCountdown, "time.expired");
+    } else {
+      setPlainText(fetchCountdown, formatSeconds(totalSeconds));
+    }
   }
 
   // Toggle Advanced Settings Accordion
@@ -233,6 +359,19 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- FETCH FLOW ---
+  // Known error codes stay bound to their key, so the message follows later language switches
+  function showFetchError(data) {
+    const key = data && data.code ? `error.${data.code}` : "";
+    if (key && hasMessage(key)) {
+      setI18n(fetchErrorMsg, key);
+    } else if (data && data.message) {
+      setPlainText(fetchErrorMsg, data.message);
+    } else {
+      setI18n(fetchErrorMsg, "fetch.failed");
+    }
+    if (fetchErrorBox) fetchErrorBox.classList.remove("hidden");
+  }
+
   async function performFetch(filename) {
     if (!filename) {
       if (inputFetchFilename) {
@@ -240,7 +379,7 @@ document.addEventListener("DOMContentLoaded", () => {
         inputFetchFilename.classList.add("ring-2", "ring-rose-500");
         setTimeout(() => inputFetchFilename.classList.remove("ring-2", "ring-rose-500"), 1500);
       }
-      showToast("请输入文件名后再提取！");
+      showToast(t("toast.enterFilenameFetch"));
       return;
     }
 
@@ -257,7 +396,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const resp = await fetch("/api/fetch", {
+      const resp = await fetch(apiUrl("/api/fetch"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ filename }),
@@ -265,31 +404,26 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await resp.json();
 
       if (!resp.ok || !data.ok) {
-        if (fetchErrorMsg) fetchErrorMsg.textContent = data.message || "获取失败，密码可能不存在或已过期";
-        if (fetchErrorBox) fetchErrorBox.classList.remove("hidden");
+        showFetchError(data);
       } else {
         // Success
-        if (fetchDisplayFilename) fetchDisplayFilename.textContent = `文件：${data.filename}`;
+        setI18n(fetchDisplayFilename, "common.file", { name: data.filename });
         if (fetchPasswordText) fetchPasswordText.textContent = data.password;
-        if (fetchViewsLeft) fetchViewsLeft.textContent = `${data.views_left} 次`;
+        setI18n(fetchViewsLeft, "unit.views", { count: data.views_left });
 
         // Start countdown
         let remainingSecs = data.seconds_left;
-        if (fetchCountdown) fetchCountdown.textContent = formatSeconds(remainingSecs);
+        renderCountdown(remainingSecs);
         countdownInterval = setInterval(() => {
           remainingSecs--;
-          if (remainingSecs <= 0) {
-            if (fetchCountdown) fetchCountdown.textContent = "已过期";
-            clearInterval(countdownInterval);
-          } else {
-            if (fetchCountdown) fetchCountdown.textContent = formatSeconds(remainingSecs);
-          }
+          renderCountdown(remainingSecs);
+          if (remainingSecs <= 0) clearInterval(countdownInterval);
         }, 1000);
 
         if (fetchResultCard) fetchResultCard.classList.remove("hidden");
       }
     } catch (err) {
-      if (fetchErrorMsg) fetchErrorMsg.textContent = "网络请求失败，请检查网络或服务器状态";
+      setI18n(fetchErrorMsg, "error.network");
       if (fetchErrorBox) fetchErrorBox.classList.remove("hidden");
     } finally {
       if (btnDoFetch) {
@@ -317,7 +451,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const resp = await fetch("/api/generate", {
+      const resp = await fetch(apiUrl("/api/generate"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(params),
@@ -328,25 +462,25 @@ document.addEventListener("DOMContentLoaded", () => {
       if (data.code === "EXISTS") {
         pendingGenerateParams = { ...params, force: true };
         if (modalFilename) modalFilename.textContent = data.existing.filename;
-        if (modalViewsLeft) modalViewsLeft.textContent = `${data.existing.views_left} / ${data.existing.max_views} 次`;
+        setI18n(modalViewsLeft, "modal.viewsValue", { left: data.existing.views_left, count: data.existing.max_views });
         const minsLeft = Math.ceil(data.existing.seconds_left / 60);
-        if (modalTimeLeft) modalTimeLeft.textContent = `${minsLeft} 分钟`;
+        setI18n(modalTimeLeft, "unit.minutes", { count: minsLeft });
 
         if (modalOverwrite) modalOverwrite.classList.remove("hidden");
         return;
       }
 
       if (!resp.ok || !data.ok) {
-        alert(data.message || "生成密码失败");
+        alert(data.message || t("gen.failed"));
         return;
       }
 
       // Success
       currentGeneratedFilename = data.filename;
-      if (genDisplayFilename) genDisplayFilename.textContent = `文件：${data.filename}`;
+      setI18n(genDisplayFilename, "common.file", { name: data.filename });
       if (genPasswordText) genPasswordText.textContent = data.password;
       if (genShareUrl) genShareUrl.value = data.share_url;
-      if (genPolicyInfo) genPolicyInfo.textContent = `⏳ 有效期：${data.expire_hours} 小时 | 最大提取 ${data.max_views} 次`;
+      setI18n(genPolicyInfo, "gen.policy", { hours: data.expire_hours, views: data.max_views });
 
       if (genResultCard) {
         genResultCard.classList.remove("hidden");
@@ -354,12 +488,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (data.is_overwrite) {
-        showToast("旧记录已清除，已生成全新密码！");
+        showToast(t("toast.overwritten"));
       } else {
-        showToast("密码已生成并生效！");
+        showToast(t("toast.generated"));
       }
     } catch (err) {
-      alert("网络连接异常，请重试");
+      alert(t("error.networkRetry"));
     } finally {
       if (btnDoGenerate) {
         btnDoGenerate.disabled = false;
@@ -375,7 +509,7 @@ document.addEventListener("DOMContentLoaded", () => {
       inputGenFilename.focus();
       inputGenFilename.classList.add("ring-2", "ring-rose-500");
       setTimeout(() => inputGenFilename.classList.remove("ring-2", "ring-rose-500"), 1500);
-      showToast("请输入文件名后再生成！");
+      showToast(t("toast.enterFilenameGen"));
       return;
     }
 
@@ -429,25 +563,25 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnDeleteThisRecord) {
     btnDeleteThisRecord.addEventListener("click", async () => {
       if (!currentGeneratedFilename) return;
-      const ok = confirm(`确定要立即永久清除【${currentGeneratedFilename}】的密码记录吗？清除后他人将无法再获取解压密码。`);
+      const ok = confirm(t("confirm.delete", { name: currentGeneratedFilename }));
       if (!ok) return;
 
       try {
-        const resp = await fetch("/api/clear", {
+        const resp = await fetch(apiUrl("/api/clear"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ filename: currentGeneratedFilename }),
         });
         const data = await resp.json();
         if (data.ok) {
-          showToast("记录已彻底清除！");
+          showToast(t("toast.cleared"));
           if (genResultCard) genResultCard.classList.add("hidden");
           if (inputGenFilename) inputGenFilename.value = "";
         } else {
-          alert(data.message || "清除失败");
+          alert(data.message || t("clear.failed"));
         }
       } catch (err) {
-        alert("请求失败，请稍后重试");
+        alert(t("error.requestFailed"));
       }
     });
   }
