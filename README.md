@@ -310,11 +310,14 @@ docker-compose up -d --build
 ssh aliyun
 cd ~/passdrop
 git pull --ff-only
-docker-compose up -d --build
+docker-compose build                     # 先构建新镜像，旧容器继续提供服务
+docker rm -f passdrop && docker-compose up -d
 curl -s http://127.0.0.1:8082/health   # 返回 {"status":"ok"} 即更新成功
 ```
 
-> 若服务器上有未提交的本地修改（如 `docker-compose.yml` 中的端口绑定）导致 `git pull` 失败，可先 `git stash`，拉取后再 `git stash pop` 恢复。
+> - 服务器访问 GitHub 的 HTTPS 不稳定时，请使用 SSH 地址作为远程仓库：`git remote set-url origin git@github.com:duying0425/passdrop.git`。
+> - 旧版 docker-compose（1.29.x）配合新版 Docker 直接 `up -d --build` 重建已有容器时会报 `KeyError: 'ContainerConfig'` 并导致服务中断，因此先 `docker rm -f passdrop` 再启动（数据位于 `./data` 挂载目录，不受影响）。
+> - 若服务器上有未提交的本地修改（如 `docker-compose.yml` 中的端口绑定）导致 `git pull` 失败，可先 `git stash`，拉取后再 `git stash pop` 恢复。
 
 ---
 
